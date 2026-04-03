@@ -118,8 +118,8 @@ for (let i = 0; i <picArray.length; i++) {
     d_img.src = picArray[i].image.large
     d_img.alt = "picture"
     dialog.showModal()
-    const closeBtn = dialog.querySelector('span');
-    closeBtn.addEventListener("click", function (evt){
+    const close = dialog.querySelector('span');
+    close.addEventListener("click", function (evt){
        dialog.close()
     })
   })
