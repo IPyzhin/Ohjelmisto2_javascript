@@ -112,4 +112,15 @@ for (let i = 0; i <picArray.length; i++) {
   article.appendChild(figure)
   article.appendChild(desc)
   target.appendChild(article)
+  article.addEventListener("click",function(evt){
+    const dialog = document.querySelector('dialog');
+    const d_img = dialog.querySelector('img');
+    d_img.src = picArray[i].image.large
+    d_img.alt = "picture"
+    dialog.showModal()
+    const closeBtn = dialog.querySelector('span');
+    closeBtn.addEventListener("click", function (evt){
+       dialog.close()
+    })
+  })
 }
