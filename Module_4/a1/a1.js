@@ -6,10 +6,10 @@ form.addEventListener('submit', async function(evt) {
         const response = await fetch(`https://api.tvmaze.com/search/shows?q=${query}`);
         const jsonData = await response.json()
         //just json dump to console
-        console.log(jsonData);
+        console.log(jsonData)
         //to show results to html page
         document.querySelector('#result').textContent = JSON.stringify(jsonData,null,1)
     } catch (error) {
-        console.log(error.message);
+        console.log(error.message)
     }
 })
