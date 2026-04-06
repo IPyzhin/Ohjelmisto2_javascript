@@ -11,7 +11,7 @@ form.addEventListener('submit', async function(evt) {
         console.log(jsonData)
         status.textContent = `Search is done. ${jsonData.length} results found.`
         //to show results to html page
-        document.getElementById("results").innerHTML = ''
+        target.innerHTML = ''
         for (let i = 0; i <jsonData.length; i++) {
             //article
             let article = document.createElement("article")
