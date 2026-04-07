@@ -37,7 +37,7 @@ function getRoute(origin, target) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-      'digitransit-subscription-key': '32043635dd004308b28e00021e4a4cdb',
+      'digitransit-subscription-key': 'your key',
         },
         body: JSON.stringify({query: GQLQuery}),
     };
