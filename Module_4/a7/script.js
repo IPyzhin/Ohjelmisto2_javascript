@@ -1,66 +1,30 @@
-const map = L.map('map').setView([60.224033089819386, 24.759099994741263], 17);
+const metropolia_position = [60.224033089819386, 24.759099994741263];
+
+const map = L.map('map').setView(metropolia_position, 17);
+
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  maxZoom: 19,
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
+L.marker(metropolia_position).addTo(map)
+  .bindPopup('Metropolia');
 
-/*const apiAddress = 'https://api.digitransit.fi/routing/v2/hsl/gtfs/v1';
-const apiAddress_search = "https://api.digitransit.fi/geocoding/v1/"
-const form = document.querySelector('#query')
-const route_info = document.getElementById('route_info')
-*/
-/*function getRoute(origin, target) {
-    // GraphQL query
-    const GQLQuery = `{
-  plan(
-    from: {lat: ${origin.latitude}, lon: ${origin.longitude}}
-    to: {lat: ${target.latitude}, lon: ${target.longitude}}
-    numItineraries: 1
-  ) {
-    itineraries {
-      legs {
-        startTime
-        endTime
-        mode
-        duration
-        distance
-        legGeometry {
-          points
-        }
-      }
-    }
-  }
-}`;
+const routeLayer = L.layerGroup().addTo(map);
 
-    const fetchOptions = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-      'digitransit-subscription-key': '32043635dd004308b28e00021e4a4cdb',
-        },
-        body: JSON.stringify({query: GQLQuery}),
-    };
-
-*/
 const apiKey = "32043635dd004308b28e00021e4a4cdb";
 const apiAddressSearch = "https://api.digitransit.fi/geocoding/v1/search";
+const apiAddress = 'https://api.digitransit.fi/routing/v2/hsl/gtfs/v1';
 
 const form = document.querySelector('form');
 const queryInput = document.querySelector('#query');
 const route_info = document.getElementById('route_info');
 
-console.log('script loaded');
-console.log('form:', form);
-console.log('queryInput:', queryInput);
-console.log('route_info:', route_info);
-
 form.addEventListener('submit', async function (evt) {
   evt.preventDefault();
-  console.log('submit fired');
 
   const query = queryInput.value.trim();
-  console.log('query:', query);
+  if (!query) return;
 
   try {
     const response = await fetch(
@@ -72,17 +36,28 @@ form.addEventListener('submit', async function (evt) {
       }
     );
 
-    console.log('status:', response.status, 'ok:', response.ok);
-
     const jsonData = await response.json();
-    console.log('jsonData:', jsonData);
-
-    route_info.textContent = JSON.stringify(jsonData, null, 2);
 
     if (jsonData.features && jsonData.features.length > 0) {
       const first = jsonData.features[0];
-      console.log('label:', first.properties.label);
-      console.log('coords:', first.geometry.coordinates);
+      const [lon, lat] = first.geometry.coordinates;
+
+      const origin = {
+        latitude: lat,
+        longitude: lon,
+        label: first.properties.label
+      };
+
+      const target = {
+        latitude: metropolia_position[0],
+        longitude: metropolia_position[1],
+        label: 'Metropolia Karamalmi campus'
+      };
+
+      getRoute(origin, target);
+    } else {
+      route_info.textContent = 'Address not found';
+      routeLayer.clearLayers();
     }
   } catch (error) {
     console.log('SEARCH ERROR:', error);
@@ -90,49 +65,100 @@ form.addEventListener('submit', async function (evt) {
   }
 });
 
-/*
-    fetch(apiAddress, fetchOptions).then(function (response) {
-        return response.json();
-    }).then(function (result) {
-        console.log(result.data.plan.itineraries[0].legs);
-        const googleEncodedRoute = result.data.plan.itineraries[0].legs;
-        for (let i = 0; i < googleEncodedRoute.length; i++) {
-            let color = '';
-            switch (googleEncodedRoute[i].mode) {
-                case 'WALK':
-                    color = 'green';
-                    break;
-                case 'BUS':
-                    color = 'red';
-                    break;
-                case 'RAIL':
-                    color = 'cyan'
-                    break;
-                case 'TRAM':
-                    color = 'magenta'
-                    break;
-                default:
-                    color = 'blue';
-                    break;
-            }
-            const route = (googleEncodedRoute[i].legGeometry.points);
-            const pointObjects = L.Polyline.fromEncoded(route).getLatLngs(); // fromEncoded: convert Google encoding to Leaflet polylines
-            L.polyline(pointObjects).setStyle({
-                color
-            }).addTo(map);
+function getRoute(origin, target) {
+  routeLayer.clearLayers();
+
+  const GQLQuery = `{
+    plan(
+      from: {lat: ${origin.latitude}, lon: ${origin.longitude}}
+      to: {lat: ${target.latitude}, lon: ${target.longitude}}
+      numItineraries: 1
+    ) {
+      itineraries {
+        startTime
+        endTime
+        duration
+        legs {
+          startTime
+          endTime
+          mode
+          duration
+          distance
+          legGeometry {
+            points
+          }
         }
-        map.fitBounds([[origin.latitude, origin.longitude], [target.latitude, target.longitude]]);
-        L.marker([origin.latitude, origin.longitude]).addTo(map)
-            .bindPopup('You start from here')
-        L.marker([target.latitude, target.longitude]).addTo(map)
-            .bindPopup('Metropolia. You end you way here')
-    }).catch(function (e) {
-        console.error(e.message);
+      }
+    }
+  }`;
+
+  const fetchOptions = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'digitransit-subscription-key': apiKey,
+    },
+    body: JSON.stringify({ query: GQLQuery }),
+  };
+
+  fetch(apiAddress, fetchOptions)
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (result) {
+      const itinerary = result.data.plan.itineraries[0];
+      const legs = itinerary.legs;
+
+      const startTime = new Date(itinerary.startTime).toLocaleTimeString('fi-FI', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const endTime = new Date(itinerary.endTime).toLocaleTimeString('fi-FI', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      route_info.textContent = `From: ${origin.label} To: ${target.label}`
+      route_info.textContent +=  `\nStart time: ${startTime}, \nEnd time: ${endTime}`
+
+      for (let i = 0; i < legs.length; i++) {
+        let color = '';
+
+        switch (legs[i].mode) {
+          case 'WALK':
+            color = 'green';
+            break;
+          case 'BUS':
+            color = 'red';
+            break;
+          case 'RAIL':
+            color = 'cyan';
+            break;
+          case 'TRAM':
+            color = 'magenta';
+            break;
+          default:
+            color = 'blue';
+            break;
+        }
+
+        const route = legs[i].legGeometry.points;
+        const pointObjects = L.Polyline.fromEncoded(route).getLatLngs();
+
+        L.polyline(pointObjects, { color }).addTo(routeLayer);
+      }
+
+      L.marker([origin.latitude, origin.longitude]).addTo(routeLayer)
+        .bindPopup('You start from here');
+
+      map.fitBounds([
+        [origin.latitude, origin.longitude],
+        [target.latitude, target.longitude]
+      ]);
+    })
+    .catch(function (e) {
+      console.error(e.message);
+      route_info.textContent = e.message;
     });
 }
-getRoute({latitude: 60.192192, longitude: 25.032203}, {latitude: 60.22392713924583, longitude: 24.758060132939075})
-*/
-
-
-
-
