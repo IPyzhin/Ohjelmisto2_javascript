@@ -87,3 +87,41 @@ input[type="submit"]:active {
   border: 1px solid #d1d5db;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
+
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+
+  #data {
+    width: 100%;
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+
+  #query {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  input[type="submit"] {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  #route_info {
+    width: 100%;
+    font-size: 14px;
+  }
+
+  #map {
+    height: 450px;
+  }
+}
